@@ -42,17 +42,17 @@
         const loader = new THREE.GLTFLoader();
 
         function loadModel(modelName) {
-            loader.load(modelName, function(gltf) {
+            loader.load(modelName, function (gltf) {
                 const model = gltf.scene;
                 model.visible = false;
                 scene.add(model);
                 models.push(model);
-            }, undefined, function(error) {
+            }, undefined, function (error) {
                 console.error('An error happened while loading the model:', error);
             });
         }
 
-        model_names.forEach(function(modelName) {
+        model_names.forEach(function (modelName) {
             loadModel('models/' + modelName);
         });
 

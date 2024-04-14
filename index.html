@@ -23,6 +23,7 @@
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 10000);
         const renderer = new THREE.WebGLRenderer();
+        const clock = new THREE.Clock();
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
         camera.position.z = -10;
@@ -45,11 +46,20 @@
         function loadModel(modelName, scale_ratio, visible = true) {
             loader.load(modelName, function (gltf) {
                 const model = gltf.scene;
-                scale=model.scale.x;
-                model.scale.set(scale/scale_ratio, scale/scale_ratio, scale/scale_ratio);
+                const scale = model.scale.x;
+                model.scale.set(scale / scale_ratio, scale / scale_ratio, scale / scale_ratio);
                 model.visible = visible;
                 scene.add(model);
                 models.push(model);
+
+                // Check if there are animations
+                if (gltf.animations && gltf.animations.length) {
+                    const mixer = new THREE.AnimationMixer(model);
+                    gltf.animations.forEach((clip) => {
+                        mixer.clipAction(clip).play();
+                    });
+                    model.mixer = mixer; // Store the mixer on the model for updating
+                }
             }, undefined, function (error) {
                 console.error('An error happened while loading the model:', error);
             });
@@ -66,7 +76,7 @@
 
         // Controls
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.enableZoom = false;  
+        controls.enableZoom = false;
         controls.enablePan = false;
 
         // Handle window resize
@@ -88,21 +98,31 @@
                     models[i].scale.set(new_scale, new_scale, new_scale);
                     console.log(i, models[i].scale.x);
                 }
-                if(models[i].scale.x > 250){
+                if (models[i].scale.x > 250) {
                     models[i].visible = false;
-                    next_index = Math.min(i+3, models.length-1);
+                    next_index = Math.min(i + 3, models.length - 1);
                     models[next_index].visible = true;
-                }else{
+                } else {
                     models[i].visible = true;
-                    next_index = Math.min(i+3, models.length-1);
+                    next_index = Math.min(i + 3, models.length - 1);
                     models[next_index].visible = false;
                 }
             }
-            
+
         });
+
 
         function animate() {
             requestAnimationFrame(animate);
+
+            const delta = clock.getDelta();
+
+            for (let model of models) {
+                if (model.mixer) {
+                    model.mixer.update(delta);
+                }
+            }
+
             renderer.render(scene, camera);
         }
 

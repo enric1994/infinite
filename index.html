@@ -20,7 +20,7 @@
 <body>
     <script>
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(1, window.innerWidth / window.innerHeight, 5, 1000);
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer();
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
@@ -32,19 +32,31 @@
         const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
         directionalLight.position.set(-1, -1, -1);
         scene.add(directionalLight);
-        var model_scale = 0.0001;
-        // GLTF Model
-        let model = null; // Reference to the model
+
+
+        // Load models
+        var model_names = ['model.1.glb', 'model.2.glb', 'model.3.glb', 'model.4.glb', 'model.5.glb', 'model.6.glb', 'model.7.glb'];
+        var model_scale = 1;
+        let models = []; // Array to store references to the models
+
         const loader = new THREE.GLTFLoader();
-        loader.load('model.glb', function(gltf) {
-            model = gltf.scene;
-            model.scale.set(model_scale,model_scale,model_scale);
-            scene.add(model);
-        }, undefined, function(error) {
-            console.error('An error happened while loading the model:', error);
+
+        function loadModel(modelName) {
+            loader.load(modelName, function(gltf) {
+                const model = gltf.scene;
+                model.visible = false;
+                scene.add(model);
+                models.push(model);
+            }, undefined, function(error) {
+                console.error('An error happened while loading the model:', error);
+            });
+        }
+
+        model_names.forEach(function(modelName) {
+            loadModel('models/' + modelName);
         });
 
-        camera.position.z = -200;
+        camera.position.z = -10;
 
         // Controls
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -61,19 +73,16 @@
 
         // Handle scroll to resize model
         window.addEventListener('wheel', (event) => {
-            if (model) {
-                const delta = -event.deltaY * 0.001 * model.scale.x;
-                model.scale.x += delta;
-                model.scale.y += delta;
-                model.scale.z += delta;
-                console.log(model.scale.x);
 
-                // Optional: clamp the scale to prevent the model from inverting or disappearing
-                model.scale.set(
-                    Math.max(0.00001, model.scale.x),
-                    Math.max(0.00001, model.scale.y),
-                    Math.max(0.00001, model.scale.z)
-                );
+            if (models[0]) {
+                const delta = -event.deltaY * 0.01 * models[0].scale.x;
+                for (let i = 0; i < 3; i++) {
+                    models[i].visible = true;
+                    models[i].scale.x += delta;
+                    models[i].scale.y += delta;
+                    models[i].scale.z += delta;
+                }
+
             }
         });
 

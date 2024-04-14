@@ -19,11 +19,13 @@
 
 <body>
     <script>
+        // Setup
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 10000);
         const renderer = new THREE.WebGLRenderer();
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
+        camera.position.z = -10;
 
         // Lighting
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); // soft white light
@@ -33,18 +35,19 @@
         directionalLight.position.set(-1, -1, -1);
         scene.add(directionalLight);
 
-
         // Load models
         var model_names = ['model.1.glb', 'model.2.glb', 'model.3.glb', 'model.4.glb', 'model.5.glb', 'model.6.glb', 'model.7.glb'];
         var model_scale = 1;
-        let models = []; // Array to store references to the models
+        let models = [];
 
         const loader = new THREE.GLTFLoader();
 
-        function loadModel(modelName) {
+        function loadModel(modelName, scale_ratio, visible = true) {
             loader.load(modelName, function (gltf) {
                 const model = gltf.scene;
-                model.visible = false;
+                scale=model.scale.x;
+                model.scale.set(scale/scale_ratio, scale/scale_ratio, scale/scale_ratio);
+                model.visible = visible;
                 scene.add(model);
                 models.push(model);
             }, undefined, function (error) {
@@ -52,17 +55,19 @@
             });
         }
 
-        model_names.forEach(function (modelName) {
-            loadModel('models/' + modelName);
-        });
+        loadModel('models/' + model_names[0], 1);
+        loadModel('models/' + model_names[1], 20);
+        loadModel('models/' + model_names[2], 400);
 
-        camera.position.z = -10;
+        for (let i = 3; i < model_names.length; i++) {
+            loadModel('models/' + model_names[i], 400, false);
+            console.log('Load model', model_names[i]);
+        }
 
         // Controls
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.enableZoom = false;  // Disable zoom
-        controls.enablePan = false;   // Disable pan
-        // controls.dampingFactor = 10; // Inertia
+        controls.enableZoom = false;  
+        controls.enablePan = false;
 
         // Handle window resize
         window.addEventListener('resize', () => {
@@ -71,19 +76,29 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         }, false);
 
-        // Handle scroll to resize model
+        // Handle scroll to resize models
         window.addEventListener('wheel', (event) => {
+            const scrollIntensity = -event.deltaY * 0.005;
 
-            if (models[0]) {
-                const delta = -event.deltaY * 0.01 * models[0].scale.x;
-                for (let i = 0; i < 3; i++) {
-                    models[i].visible = true;
-                    models[i].scale.x += delta;
-                    models[i].scale.y += delta;
-                    models[i].scale.z += delta;
+            // Increase the scale of the models according to scroll intensity
+            for (let i = 0; i < models.length; i++) {
+                if (models[i].visible) {
+                    current_scale = models[i].scale.x;
+                    new_scale = current_scale + scrollIntensity * current_scale;
+                    models[i].scale.set(new_scale, new_scale, new_scale);
+                    console.log(i, models[i].scale.x);
                 }
-
+                if(models[i].scale.x > 250){
+                    models[i].visible = false;
+                    next_index = Math.min(i+3, models.length-1);
+                    models[next_index].visible = true;
+                }else{
+                    models[i].visible = true;
+                    next_index = Math.min(i+3, models.length-1);
+                    models[next_index].visible = false;
+                }
             }
+            
         });
 
         function animate() {

@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>Three.js with OrbitControls, GLTFLoader, and Dynamic Model Scaling</title>
+    <title>Infinite scroll</title>
     <style>
         body {
             margin: 0;
@@ -27,9 +27,10 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
         camera.position.z = -10;
+        camera.position.y = 5;
 
         // Lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); // soft white light
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
         scene.add(ambientLight);
 
         const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
@@ -44,35 +45,38 @@
         const loader = new THREE.GLTFLoader();
 
         function loadModel(modelName, scale_ratio, visible = true) {
-            loader.load(modelName, function (gltf) {
-                const model = gltf.scene;
-                const scale = model.scale.x;
-                model.scale.set(scale / scale_ratio, scale / scale_ratio, scale / scale_ratio);
-                model.visible = visible;
-                scene.add(model);
-                models.push(model);
+            return new Promise((resolve, reject) => {
+                loader.load(modelName, function (gltf) {
+                    const model = gltf.scene;
+                    const scale = model.scale.x;
+                    model.scale.set(scale / scale_ratio, scale / scale_ratio, scale / scale_ratio);
+                    model.visible = visible;
+                    scene.add(model);
 
-                // Check if there are animations
-                if (gltf.animations && gltf.animations.length) {
-                    const mixer = new THREE.AnimationMixer(model);
-                    gltf.animations.forEach((clip) => {
-                        mixer.clipAction(clip).play();
-                    });
-                    model.mixer = mixer; // Store the mixer on the model for updating
-                }
-            }, undefined, function (error) {
-                console.error('An error happened while loading the model:', error);
+                    // Enable animations
+                    if (gltf.animations && gltf.animations.length) {
+                        const mixer = new THREE.AnimationMixer(model);
+                        gltf.animations.forEach((clip) => {
+                            mixer.clipAction(clip).play();
+                        });
+                        model.mixer = mixer;
+                    }
+                    resolve(model);
+                }, undefined, reject);
             });
         }
 
-        loadModel('models/' + model_names[0], 1);
-        loadModel('models/' + model_names[1], 20);
-        loadModel('models/' + model_names[2], 400);
-
-        for (let i = 3; i < model_names.length; i++) {
-            loadModel('models/' + model_names[i], 400, false);
-            console.log('Load model', model_names[i]);
+        async function loadModels() {
+            for (let i = 0; i < model_names.length; i++) {
+                models.push(await loadModel('models/' + model_names[i], 30 ** (i)));
+            }
         }
+
+        loadModels().then(() => {
+            console.log("All models loaded in order.");
+        }).catch(error => {
+            console.error("An error occurred while loading models: ", error);
+        });
 
         // Controls
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -86,46 +90,30 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         }, false);
 
-        // Handle scroll to resize models
+        // Handle scroll to rescale models
         window.addEventListener('wheel', (event) => {
             const scrollIntensity = -event.deltaY * 0.005;
 
-            // Increase the scale of the models according to scroll intensity
             for (let i = 0; i < models.length; i++) {
                 if (models[i].visible) {
                     current_scale = models[i].scale.x;
                     new_scale = current_scale + scrollIntensity * current_scale;
                     models[i].scale.set(new_scale, new_scale, new_scale);
-                    console.log(i, models[i].scale.x);
-                }
-                if (models[i].scale.x > 250) {
-                    models[i].visible = false;
-                    next_index = Math.min(i + 3, models.length - 1);
-                    models[next_index].visible = true;
-                } else {
-                    models[i].visible = true;
-                    next_index = Math.min(i + 3, models.length - 1);
-                    models[next_index].visible = false;
                 }
             }
-
         });
 
-
+        // Animation loop 
         function animate() {
             requestAnimationFrame(animate);
-
             const delta = clock.getDelta();
-
             for (let model of models) {
                 if (model.mixer) {
                     model.mixer.update(delta);
                 }
             }
-
             renderer.render(scene, camera);
         }
-
         animate();
     </script>
 </body>

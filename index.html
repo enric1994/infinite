@@ -4,6 +4,11 @@
 <head>
     <title>Infinite scroll</title>
     <style>
+        html {
+            overflow: hidden;
+            overscroll-behavior: none;
+        }
+
         body {
             margin: 0;
             background: linear-gradient(to bottom, #3498db, #e9d6c4);
@@ -13,9 +18,10 @@
             display: block;
         }
     </style>
+    <!-- <script>history.scrollRestoration = "manual"</script> -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.143.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.143.0/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.143.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/three@0.143.0/examples/js/controls/OrbitControls.js"></script> -->
 </head>
 
 <body>
@@ -23,7 +29,7 @@
         // Setup
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, logarithmicDepthBuffer: true } );
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, logarithmicDepthBuffer: true });
 
         renderer.shadowMap.enabled = true;
         renderer.shadowMapSoft = true;
@@ -38,8 +44,10 @@
         const clock = new THREE.Clock();
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
-        camera.position.z = 15;
-        camera.position.y = 7 ;
+        camera.position.z = 20;
+        camera.position.y = 5;
+        // point camera to the center
+        camera.lookAt(0, 0, 0);
 
         // Lighting
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
@@ -64,7 +72,7 @@
         directionalLight4.position.set(-10, -5, 10);
         scene.add(directionalLight4);
 
-        const shadowLight = new THREE.DirectionalLight(0xffffff, 0.7);
+        const shadowLight = new THREE.DirectionalLight(0xffffff, 1.0);
         shadowLight.position.set(-0.2, 1, -0.2);
         shadowLight.castShadow = true;
         scene.add(shadowLight);
@@ -148,10 +156,6 @@
             console.error("An error occurred while loading models: ", error);
         });
 
-        // Controls
-        const controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.enableZoom = false;
-        controls.enablePan = false;
 
         // Handle window resize
         window.addEventListener('resize', () => {
@@ -162,7 +166,7 @@
 
         // Handle scroll to rescale models
         window.addEventListener('wheel', (event) => {
-            const scrollIntensity = -event.deltaY * 0.005;
+            const scrollIntensity = event.deltaY * 0.005;
 
             for (let i = 0; i < models.length; i++) {
                 if (models[i].visible) {
@@ -174,6 +178,64 @@
             // Camera can approach in an arc
             // camera.position.x = 10*Math.cos(Math.log2(models[0].scale.x));
             // camera.position.z = 10*Math.cos(Math.log2(models[0].scale.x));
+        });
+
+        // Handle touch events to rescale models
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        let inertia = 0;
+
+        window.addEventListener('touchstart', (event) => {
+            touchStartX = event.touches[0].clientX;
+            touchStartY = event.touches[0].clientY;
+            inertia = 0;
+        });
+
+        window.addEventListener('touchmove', (event) => {
+            const touchX = event.touches[0].clientX;
+            const touchY = event.touches[0].clientY;
+
+            const deltaX = touchX - touchStartX;
+            const deltaY = touchY - touchStartY;
+
+            const scrollIntensity = -deltaY * 0.005;
+
+            for (let i = 0; i < models.length; i++) {
+                if (models[i].visible) {
+                    current_scale = models[i].scale.x;
+                    new_scale = current_scale + scrollIntensity * current_scale;
+                    models[i].scale.set(new_scale, new_scale, new_scale);
+                }
+            }
+
+            touchStartX = touchX;
+            touchStartY = touchY;
+
+            inertia = deltaY;
+        });
+
+        window.addEventListener('touchend', () => {
+            const inertiaDecay = 0.97;
+
+            function inertiaLoop() {
+                if (Math.abs(inertia) > 0.01) {
+                    const scrollIntensity = -inertia * 0.005;
+
+                    for (let i = 0; i < models.length; i++) {
+                        if (models[i].visible) {
+                            current_scale = models[i].scale.x;
+                            new_scale = current_scale + scrollIntensity * current_scale;
+                            models[i].scale.set(new_scale, new_scale, new_scale);
+                        }
+                    }
+
+                    inertia *= inertiaDecay;
+                    requestAnimationFrame(inertiaLoop);
+                }
+            }
+
+            inertiaLoop();
         });
 
         // Animation loop 

@@ -6,6 +6,7 @@
     <style>
         body {
             margin: 0;
+            background: linear-gradient(to bottom, #3498db, #e9d6c4);
         }
 
         canvas {
@@ -21,21 +22,64 @@
     <script>
         // Setup
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 10000);
-        const renderer = new THREE.WebGLRenderer();
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, logarithmicDepthBuffer: true } );
+
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMapSoft = true;
+        renderer.powerPreference = "high-performance";
+        renderer.shadowMap.enabled = true
+        renderer.gammaFactor = 2.2;
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        renderer.physicallyCorrectLights = true;
+
+
+        // const textureLoader = new THREE.TextureLoader();
         const clock = new THREE.Clock();
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
-        camera.position.z = -10;
-        camera.position.y = 5;
+        camera.position.z = 15;
+        camera.position.y = 7 ;
 
         // Lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
         scene.add(ambientLight);
 
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        directionalLight.position.set(-1, -1, -1);
+        const hemiLight = new THREE.HemisphereLight('white', 'orange', .8);
+        scene.add(hemiLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, .8);
+        directionalLight.position.set(-10, 5, 10);
         scene.add(directionalLight);
+
+        const directionalLight2 = new THREE.DirectionalLight(0xffffff, .8);
+        directionalLight2.position.set(10, 5, 10);
+        scene.add(directionalLight2);
+
+        const directionalLight3 = new THREE.DirectionalLight(0xffffff, .8);
+        directionalLight3.position.set(5, 5, 10);
+        scene.add(directionalLight3);
+
+        const directionalLight4 = new THREE.DirectionalLight(0xffffff, .8);
+        directionalLight4.position.set(-10, -5, 10);
+        scene.add(directionalLight4);
+
+        const shadowLight = new THREE.DirectionalLight(0xffffff, 0.7);
+        shadowLight.position.set(-0.2, 1, -0.2);
+        shadowLight.castShadow = true;
+        scene.add(shadowLight);
+        shadowLight.shadow.mapSize.width = 5000;
+        shadowLight.shadow.mapSize.height = 5000;
+
+        shadowLight.shadow.camera.near = 1;
+        shadowLight.shadow.camera.far = 50;
+        shadowLight.shadow.camera.top = 50;
+        shadowLight.shadow.camera.bottom = -50;
+        shadowLight.shadow.camera.left = -50;
+        shadowLight.shadow.camera.right = 50;
+        shadowLight.shadow.camera.updateProjectionMatrix();
+        shadowLight.castShadow = true;
+        shadowLight.shadow.bias = -0.001;
 
         // Load models
         var model_names = ['model.1.glb', 'model.2.glb', 'model.3.glb', 'model.4.glb', 'model.5.glb', 'model.6.glb', 'model.7.glb'];
@@ -44,14 +88,40 @@
 
         const loader = new THREE.GLTFLoader();
 
-        function loadModel(modelName, scale_ratio, visible = true) {
+        function loadModel(modelName, scale_ratio, texturePath, visible = true) {
             return new Promise((resolve, reject) => {
                 loader.load(modelName, function (gltf) {
                     const model = gltf.scene;
                     const scale = model.scale.x;
                     model.scale.set(scale / scale_ratio, scale / scale_ratio, scale / scale_ratio);
                     model.visible = visible;
+
+                    // Cast shadows to objects
+                    model.castShadow = true;
+                    model.traverse(function (node) {
+                        if (node instanceof THREE.Mesh) {
+                            node.castShadow = true;
+                            node.receiveShadow = true;
+                            node.flatShading = true;
+                            node.blending = THREE.NoBlending;
+                            const newMaterial = new THREE.MeshPhongMaterial({ color: node.material.color });
+                            node.material = newMaterial;
+
+                        }
+                    });
                     scene.add(model);
+
+                    // Load and apply textures
+                    // if (texturePath) {
+                    //     const texture = textureLoader.load(texturePath, function (tex) {
+                    //         model.traverse((child) => {
+                    //             if (child.isMesh) {
+                    //                 child.material.map = tex;
+                    //                 child.material.needsUpdate = true;
+                    //             }
+                    //         });
+                    //     });
+                    // }
 
                     // Enable animations
                     if (gltf.animations && gltf.animations.length) {
@@ -65,10 +135,10 @@
                 }, undefined, reject);
             });
         }
-
         async function loadModels() {
+            const texturePaths = ['texture1.png', 'texture1.png', 'texture1.png', 'texture1.png', 'texture1.png', 'texture1.png', 'texture1.png']; // Add your texture filenames here
             for (let i = 0; i < model_names.length; i++) {
-                models.push(await loadModel('models/' + model_names[i], 30 ** (i)));
+                models.push(await loadModel('models/' + model_names[0], 50 ** (i), 'textures/' + texturePaths[i]));
             }
         }
 
@@ -101,6 +171,9 @@
                     models[i].scale.set(new_scale, new_scale, new_scale);
                 }
             }
+            // Camera can approach in an arc
+            // camera.position.x = 10*Math.cos(Math.log2(models[0].scale.x));
+            // camera.position.z = 10*Math.cos(Math.log2(models[0].scale.x));
         });
 
         // Animation loop 

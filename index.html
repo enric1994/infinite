@@ -44,10 +44,10 @@
         const clock = new THREE.Clock();
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
-        camera.position.z = 20;
-        camera.position.y = 5;
+        // camera.position.z = 30;
+        // camera.position.y = 5;
         // point camera to the center
-        camera.lookAt(0, 0, 0);
+        // camera.lookAt(0, 0, 0);
 
         // Lighting
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
@@ -101,6 +101,8 @@
                 loader.load(modelName, function (gltf) {
                     const model = gltf.scene;
                     const scale = model.scale.x;
+                    model.rotation.y = Math.PI / 3;
+                    
                     model.scale.set(scale / scale_ratio, scale / scale_ratio, scale / scale_ratio);
                     model.visible = visible;
 
@@ -152,6 +154,11 @@
 
         loadModels().then(() => {
             console.log("All models loaded in order.");
+            camera.position.x = 8 * Math.cos(0.2 * Math.log2(models[0].scale.x));
+            camera.position.y = 2 * Math.cos(0.2 * Math.log2(models[0].scale.x));
+            camera.position.z = 4 * Math.cos(0.01 * Math.log2(models[0].scale.x));
+            camera.lookAt(0, 0, 0);
+            console.log(camera.position);
         }).catch(error => {
             console.error("An error occurred while loading models: ", error);
         });
@@ -176,8 +183,10 @@
                 }
             }
             // Camera can approach in an arc
-            // camera.position.x = 10*Math.cos(Math.log2(models[0].scale.x));
-            // camera.position.z = 10*Math.cos(Math.log2(models[0].scale.x));
+            camera.position.x = 8 * Math.cos(0.2 * Math.log2(models[0].scale.x));
+            camera.position.y = 2 * Math.cos(0.2 * Math.log2(models[0].scale.x));
+            camera.position.z = 4 * Math.cos(0.01 * Math.log2(models[0].scale.x));
+            camera.lookAt(0, 0, 0);
         });
 
         // Handle touch events to rescale models
@@ -208,6 +217,10 @@
                     models[i].scale.set(new_scale, new_scale, new_scale);
                 }
             }
+            camera.position.x = 8 * Math.cos(0.2 * Math.log2(models[0].scale.x));
+            camera.position.y = 2 * Math.cos(0.2 * Math.log2(models[0].scale.x));
+            camera.position.z = 4 * Math.cos(0.01 * Math.log2(models[0].scale.x));
+            camera.lookAt(0, 0, 0);
 
             touchStartX = touchX;
             touchStartY = touchY;
@@ -229,6 +242,10 @@
                             models[i].scale.set(new_scale, new_scale, new_scale);
                         }
                     }
+                    camera.position.x = 8 * Math.cos(0.2 * Math.log2(models[0].scale.x));
+                    camera.position.y = 2 * Math.cos(0.2 * Math.log2(models[0].scale.x));
+                    camera.position.z = 4 * Math.cos(0.01 * Math.log2(models[0].scale.x));
+                    camera.lookAt(0, 0, 0);
 
                     inertia *= inertiaDecay;
                     requestAnimationFrame(inertiaLoop);

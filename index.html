@@ -1,10 +1,6 @@
 <!-- TODO:
-Refactor
 Loading screen
 Link at the end
-Lock scroll
-Hide small/big models
-
 -->
 <!DOCTYPE html>
 <html>
@@ -56,6 +52,7 @@ Hide small/big models
         const FOV = 45;
         const MAX_SCALE = 10000;
         const MIN_SCALE = 0.0001;
+        const LOCK_SALE = 0.5;
 
         function camera_path() {
             camera.position.x = 8 * Math.cos(0.2 * Math.log2(models[0].scale.x));
@@ -195,8 +192,13 @@ Hide small/big models
         window.addEventListener('wheel', (event) => {
             const scrollIntensity = event.deltaY * INERTIA_FACTOR;
 
-            scale_models(scrollIntensity)
-            camera_path()
+            if (
+                (models.at(0).scale.x > LOCK_SALE && scrollIntensity < 0) ||
+                (models.at(-1).scale.x < LOCK_SALE && scrollIntensity > 0)
+            ) {
+                scale_models(scrollIntensity)
+                camera_path()
+            }
         });
 
         // Handle touch events to rescale models
@@ -216,7 +218,8 @@ Hide small/big models
             const deltaX = touchX - touchStartX;
             const deltaY = touchY - touchStartY;
             const scrollIntensity = -deltaY * INERTIA_FACTOR;
-
+            
+            // TODO: add lock
             scale_models(scrollIntensity)
             camera_path()
 
@@ -230,6 +233,7 @@ Hide small/big models
             function inertiaLoop() {
                 if (Math.abs(inertia) > 0.01) {
                     const scrollIntensity = -inertia * INERTIA_FACTOR;
+                    // TODO: add lock
                     scale_models(scrollIntensity)
                     camera_path()
 

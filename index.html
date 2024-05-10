@@ -96,7 +96,7 @@ Lock scroll
         shadowLight.shadow.bias = -0.001;
 
         // Load models
-        var model_names = ['model.1.glb', 'model.2.glb', 'model.3.glb', 'model.4.glb', 'model.5.glb', 'model.6.glb', 'model.7.glb'];
+        var model_names = ['title.glb', 'city.glb', 'languages.glb', 'title.glb', 'city.glb', 'languages.glb'];
         var model_scale = 1;
         let models = [];
 
@@ -154,7 +154,7 @@ Lock scroll
         async function loadModels() {
             const texturePaths = ['texture1.png', 'texture1.png', 'texture1.png', 'texture1.png', 'texture1.png', 'texture1.png', 'texture1.png']; // Add your texture filenames here
             for (let i = 0; i < model_names.length; i++) {
-                models.push(await loadModel('models/' + model_names[0], 50 ** (i), 'textures/' + texturePaths[i]));
+                models.push(await loadModel('models/' + model_names[i], 50 ** (i), 'textures/' + texturePaths[i]));
             }
         }
 

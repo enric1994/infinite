@@ -44,14 +44,14 @@
         const MIN_SCALE = 0.0001;
         const LOCK_SALE = 0.5;
         const model_names = ['title.glb', 'city.glb', 'languages.glb', 'title.glb', 'city.glb', 'languages.glb'];
-        
+
         function camera_path() {
             camera.position.x = 8 * Math.cos(0.2 * Math.log2(models[0].scale.x));
             camera.position.y = 2 * Math.cos(0.2 * Math.log2(models[0].scale.x));
             camera.position.z = 4 * Math.cos(0.01 * Math.log2(models[0].scale.x));
             camera.lookAt(0, 0, 0);
         }
-        
+
         function scale_models(scrollIntensity) {
             for (let i = 0; i < models.length; i++) {
                 current_scale = models[i].scale.x;
@@ -64,14 +64,14 @@
                 }
             }
         }
-        
+
         // Setup
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(FOV, window.innerWidth / window.innerHeight, 1, 1000000);
         const clock = new THREE.Clock();
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, logarithmicDepthBuffer: true });
         const loader = new THREE.GLTFLoader();
-        
+
         renderer.shadowMap.enabled = true;
         renderer.shadowMapSoft = true;
         renderer.powerPreference = "high-performance";
@@ -80,12 +80,12 @@
         renderer.physicallyCorrectLights = true;
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
-        
+
         // Stats
         const stats = new Stats()
         stats.showPanel(0) // 0: fps, 1: ms, 2: mb, 3+: custom
         document.body.appendChild(stats.dom)
-        
+
         // Lighting
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
         scene.add(ambientLight);
@@ -211,14 +211,18 @@
             const deltaX = touchX - touchStartX;
             const deltaY = touchY - touchStartY;
             const scrollIntensity = -deltaY * INERTIA_FACTOR;
-            
-            // TODO: add lock
-            scale_models(scrollIntensity)
-            camera_path()
 
-            inertia = deltaY;
-            touchStartX = touchX;
-            touchStartY = touchY;
+            if (
+                (models.at(0).scale.x > LOCK_SALE && scrollIntensity < 0) ||
+                (models.at(-1).scale.x < LOCK_SALE && scrollIntensity > 0)
+            ) {
+                scale_models(scrollIntensity)
+                camera_path()
+
+                inertia = deltaY;
+                touchStartX = touchX;
+                touchStartY = touchY;
+            }
 
         });
 
@@ -226,12 +230,17 @@
             function inertiaLoop() {
                 if (Math.abs(inertia) > 0.01) {
                     const scrollIntensity = -inertia * INERTIA_FACTOR;
-                    // TODO: add lock
-                    scale_models(scrollIntensity)
-                    camera_path()
 
-                    inertia *= INERTIA_DECAY;
-                    requestAnimationFrame(inertiaLoop);
+                    if (
+                        (models.at(0).scale.x > LOCK_SALE && scrollIntensity < 0) ||
+                        (models.at(-1).scale.x < LOCK_SALE && scrollIntensity > 0)
+                    ) {
+                        scale_models(scrollIntensity)
+                        camera_path()
+
+                        inertia *= INERTIA_DECAY;
+                        requestAnimationFrame(inertiaLoop);
+                    }
                 }
             }
             inertiaLoop();

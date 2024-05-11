@@ -1,7 +1,3 @@
-<!-- TODO:
-Loading screen
-Link at the end
--->
 <!DOCTYPE html>
 <html>
 
@@ -41,26 +37,21 @@ Link at the end
 
 <body>
     <script>
-        // Stats
-        const stats = new Stats()
-        stats.showPanel(0) // 0: fps, 1: ms, 2: mb, 3+: custom
-        document.body.appendChild(stats.dom)
-
-        // 
         const INERTIA_FACTOR = 0.005
         const INERTIA_DECAY = 0.97;
         const FOV = 45;
         const MAX_SCALE = 10000;
         const MIN_SCALE = 0.0001;
         const LOCK_SALE = 0.5;
-
+        const model_names = ['title.glb', 'city.glb', 'languages.glb', 'title.glb', 'city.glb', 'languages.glb'];
+        
         function camera_path() {
             camera.position.x = 8 * Math.cos(0.2 * Math.log2(models[0].scale.x));
             camera.position.y = 2 * Math.cos(0.2 * Math.log2(models[0].scale.x));
             camera.position.z = 4 * Math.cos(0.01 * Math.log2(models[0].scale.x));
             camera.lookAt(0, 0, 0);
         }
-
+        
         function scale_models(scrollIntensity) {
             for (let i = 0; i < models.length; i++) {
                 current_scale = models[i].scale.x;
@@ -73,13 +64,14 @@ Link at the end
                 }
             }
         }
-
+        
         // Setup
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(FOV, window.innerWidth / window.innerHeight, 1, 1000000);
         const clock = new THREE.Clock();
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, logarithmicDepthBuffer: true });
-
+        const loader = new THREE.GLTFLoader();
+        
         renderer.shadowMap.enabled = true;
         renderer.shadowMapSoft = true;
         renderer.powerPreference = "high-performance";
@@ -88,7 +80,12 @@ Link at the end
         renderer.physicallyCorrectLights = true;
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
-
+        
+        // Stats
+        const stats = new Stats()
+        stats.showPanel(0) // 0: fps, 1: ms, 2: mb, 3+: custom
+        document.body.appendChild(stats.dom)
+        
         // Lighting
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
         scene.add(ambientLight);
@@ -130,11 +127,8 @@ Link at the end
         shadowLight.shadow.bias = -0.001;
 
         // Load models
-        var model_names = ['title.glb', 'city.glb', 'languages.glb', 'title.glb', 'city.glb', 'languages.glb'];
-        var model_scale = 1;
         let models = [];
 
-        const loader = new THREE.GLTFLoader();
 
         function loadModel(modelName, scale_ratio) {
             return new Promise((resolve, reject) => {
@@ -171,15 +165,14 @@ Link at the end
             });
         }
         async function loadModels() {
-            const texturePaths = ['texture1.png', 'texture1.png', 'texture1.png', 'texture1.png', 'texture1.png', 'texture1.png', 'texture1.png'];
-            for (let i = 0; i < model_names.length; i++) {
+            models.push(await loadModel('models/' + model_names[0], 1));
+            camera_path()
+            for (let i = 1; i < model_names.length; i++) {
                 models.push(await loadModel('models/' + model_names[i], 50 ** (i)));
+                await new Promise(r => setTimeout(r, 500));
             }
         }
-
-        loadModels().then(() => {
-            camera_path()
-        });
+        loadModels()
 
         // Handle window resize
         window.addEventListener('resize', () => {

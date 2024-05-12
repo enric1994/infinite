@@ -19,10 +19,9 @@
             overflow: hidden;
             overscroll-behavior: none;
         }
-
         body {
             margin: 0;
-            background: linear-gradient(to bottom, #3498db, #e9d6c4);
+            background: linear-gradient(to bottom, #0b9ed9, #07c7f2);
         }
 
         canvas {
@@ -47,7 +46,7 @@
 
         function camera_path() {
             camera.position.x = 25 * Math.sin(0.4 * Math.log2(models[0].scale.x));
-            camera.position.y = 3 + 2 * Math.sin(0.3 * Math.log2(models[0].scale.x));
+            camera.position.y = 0 + 2 * Math.sin(0.3 * Math.log2(models[0].scale.x));
             camera.position.z = -15 + 25 * Math.cos(0.2 * Math.log2(models[0].scale.x));
             camera.lookAt(0, 0, 0);
         }
@@ -87,27 +86,36 @@
         document.body.appendChild(stats.dom)
 
         // Lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-        scene.add(ambientLight);
+        const ambientLight = new THREE.AmbientLight('white', .75);
+        scene.add(ambientLight)
 
-        const hemiLight = new THREE.HemisphereLight('white', 'orange', .8);
-        scene.add(hemiLight);
+        const hemiLight = new THREE.HemisphereLight('white', 'orange', 1);
+        scene.add(hemiLight)
 
-        const directionalLight = new THREE.DirectionalLight(0xffffff, .8);
-        directionalLight.position.set(-10, 5, 10);
-        scene.add(directionalLight);
+        // Directional light 1
+        const dir1 = new THREE.DirectionalLight('white', 1);
+        dir1.position.set(10, 10, 10);
+        scene.add(dir1)
 
-        const directionalLight2 = new THREE.DirectionalLight(0xffffff, .8);
-        directionalLight2.position.set(10, 5, 10);
-        scene.add(directionalLight2);
+        // Directional light 2 
+        const dir2 = new THREE.DirectionalLight('white', 1);
+        dir2.position.set(-10, 10, 10);
+        scene.add(dir2)
 
-        const directionalLight3 = new THREE.DirectionalLight(0xffffff, .8);
-        directionalLight3.position.set(5, 5, 10);
-        scene.add(directionalLight3);
+        // Directional light 3
+        const dir3 = new THREE.DirectionalLight('white', 1);
+        dir3.position.set(-10, 10, -10);
+        scene.add(dir3)
 
-        const directionalLight4 = new THREE.DirectionalLight(0xffffff, .8);
-        directionalLight4.position.set(-10, -5, 10);
-        scene.add(directionalLight4);
+        // Directional light 4
+        const dir4 = new THREE.DirectionalLight('white', 1);
+        dir4.position.set(10, 10, -10);
+        scene.add(dir4)
+
+        // Directional light 5
+        const dir5 = new THREE.DirectionalLight('white', 0.7);
+        dir2.position.set(-10, 10, -5);
+        scene.add(dir5)
 
         const shadowLight = new THREE.DirectionalLight(0xffffff, 1.0);
         shadowLight.position.set(-0.2, 1, -0.2);

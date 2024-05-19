@@ -70,7 +70,8 @@
         const clock = new THREE.Clock();
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, logarithmicDepthBuffer: true });
         const loader = new THREE.GLTFLoader();
-
+        
+        renderer.setPixelRatio(2);
         renderer.shadowMap.enabled = true;
         renderer.shadowMapSoft = true;
         renderer.powerPreference = "high-performance";

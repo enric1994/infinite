@@ -197,8 +197,8 @@
             const scrollIntensity = event.deltaY * INERTIA_FACTOR;
 
             if (
-                (models.at(0).scale.x > LOCK_SALE && scrollIntensity < 0) ||
-                (models.at(-1).scale.x < LOCK_SALE && scrollIntensity > 0)
+                (models.at(0).scale.x + scrollIntensity * models.at(0).scale.x > LOCK_SALE && scrollIntensity < 0) ||
+                (models.at(-1).scale.x - scrollIntensity * models.at(0).scale.x < LOCK_SALE && scrollIntensity > 0)
             ) {
                 scale_models(scrollIntensity)
                 camera_path()

@@ -19,6 +19,7 @@
             overflow: hidden;
             overscroll-behavior: none;
         }
+
         body {
             margin: 0;
             background: linear-gradient(to bottom, #0b9ed9, #07c7f2);
@@ -38,6 +39,7 @@
     <script>
         const INERTIA_FACTOR = 0.005
         const INERTIA_DECAY = 0.97;
+        const KEY_SPEED = 6;
         const FOV = 45;
         const MAX_SCALE = 10000;
         const MIN_SCALE = 0.0001;
@@ -70,7 +72,7 @@
         const clock = new THREE.Clock();
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, logarithmicDepthBuffer: true });
         const loader = new THREE.GLTFLoader();
-        
+
         renderer.setPixelRatio(2);
         renderer.shadowMap.enabled = true;
         renderer.shadowMapSoft = true;
@@ -254,6 +256,43 @@
             }
             inertiaLoop();
         });
+
+        let keyInertia = 0;
+        let keyInterval;
+
+        function handleKeyInertia() {
+            if (Math.abs(keyInertia) > 0.01) {
+                const scrollIntensity = keyInertia * INERTIA_FACTOR;
+
+                if (
+                    (models.at(0).scale.x > LOCK_SALE && scrollIntensity < 0) ||
+                    (models.at(-1).scale.x < LOCK_SALE && scrollIntensity > 0)
+                ) {
+                    scale_models(scrollIntensity);
+                    camera_path();
+                    keyInertia *= INERTIA_DECAY;
+                } else {
+                    clearInterval(keyInterval);
+                }
+            } else {
+                clearInterval(keyInterval);
+            }
+        }
+
+        window.addEventListener('keydown', (event) => {
+            if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+                clearInterval(keyInterval);
+                keyInertia = (event.key === 'ArrowUp' ? -KEY_SPEED : KEY_SPEED);
+                keyInterval = setInterval(handleKeyInertia, 10);
+            }
+        });
+
+        window.addEventListener('keyup', (event) => {
+            if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+                keyInertia *= INERTIA_DECAY;
+            }
+        });
+
 
         // Animation loop 
         function animate() {

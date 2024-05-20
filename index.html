@@ -119,7 +119,7 @@
         scene.add(dir5)
 
         const shadowLight = new THREE.DirectionalLight(0xffffff, 1.0);
-        shadowLight.position.set(-0.2, 1, -0.2);
+        shadowLight.position.set(0.1, 1.5, 0.1);
         shadowLight.castShadow = true;
         scene.add(shadowLight);
         shadowLight.shadow.mapSize.width = 5000;

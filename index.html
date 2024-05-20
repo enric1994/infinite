@@ -45,9 +45,9 @@
         const model_names = ['title.glb', 'city.glb', 'languages.glb', 'title.glb', 'city.glb', 'languages.glb', 'city.glb', 'languages.glb', 'title.glb', 'city.glb', 'languages.glb'];
 
         function camera_path() {
-            camera.position.x = 25 * Math.sin(0.4 * Math.log2(models[0].scale.x));
-            camera.position.y = 0 + 2 * Math.sin(0.3 * Math.log2(models[0].scale.x));
-            camera.position.z = -15 + 25 * Math.cos(0.2 * Math.log2(models[0].scale.x));
+            camera.position.x = 15 * Math.sin(0.2 * Math.log2(models[0].scale.x));
+            camera.position.y = 1 + 1 * Math.sin(0.3 * Math.log2(models[0].scale.x));
+            camera.position.z = -5 + 15 * Math.cos(0.1 * Math.log2(models[0].scale.x));
             camera.lookAt(0, 0, 0);
         }
 

@@ -195,7 +195,9 @@
 
         // Handle scroll to rescale models
         window.addEventListener('wheel', (event) => {
-            const scrollIntensity = event.deltaY * INERTIA_FACTOR;
+            const deltaY_capped = Math.min(30, Math.max(-30, event.deltaY));
+            console.log(deltaY_capped)
+            const scrollIntensity = deltaY_capped * INERTIA_FACTOR;
 
             if (
                 (models.at(0).scale.x + scrollIntensity * models.at(0).scale.x > LOCK_SALE && scrollIntensity < 0) ||
@@ -222,7 +224,8 @@
             const touchY = event.touches[0].clientY;
             const deltaX = touchX - touchStartX;
             const deltaY = touchY - touchStartY;
-            const scrollIntensity = -deltaY * INERTIA_FACTOR;
+            const deltaY_capped = Math.min(30, Math.max(-30, deltaY));
+            const scrollIntensity = -deltaY_capped * INERTIA_FACTOR;
 
             if (
                 (models.at(0).scale.x > LOCK_SALE && scrollIntensity < 0) ||
@@ -231,7 +234,7 @@
                 scale_models(scrollIntensity)
                 camera_path()
 
-                inertia = deltaY;
+                inertia = deltaY_capped;
                 touchStartX = touchX;
                 touchStartY = touchY;
             }

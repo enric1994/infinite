@@ -68,7 +68,7 @@
 
         // Setup
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(FOV, window.innerWidth / window.innerHeight, 1, 100000000);
+        const camera = new THREE.PerspectiveCamera(FOV, window.innerWidth / window.innerHeight, 0.1, 1000000000);
         const clock = new THREE.Clock();
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, logarithmicDepthBuffer: true });
         const loader = new THREE.GLTFLoader();

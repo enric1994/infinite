@@ -37,17 +37,18 @@
 
 <body>
     <script>
-        
-        const SCROLL_FACTOR = 0.003;
+
         const SPEED_CAP = 30;
+
+        const SCROLL_FACTOR = 0.003;
         const SCROLL_DAMPING_FACTOR = 0.9;
         const SCROLL_INERTIA_THRESHOLD = 0.001;
         const SCROLL_INERTIA_CAP = 0.07
 
         const TOUCH_INERTIA_DECAY = 0.97;
         const TOUCH_INERTIA_FACTOR = 0.003
-        TOUCH_INERTIA_CAP = 0.01
-        
+        const TOUCH_INERTIA_CAP = 0.01
+
         const KEY_INERTIA_FACTOR = 0.005
         const KEY_INERTIA_DECAY = 0.99;
         const KEY_SPEED_DECAY = 0.1;
@@ -88,7 +89,11 @@
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, logarithmicDepthBuffer: true });
         const loader = new THREE.GLTFLoader();
 
-        renderer.setPixelRatio(2);
+        if (window.devicePixelRatio < 1.5) {
+            renderer.setPixelRatio(window.devicePixelRatio);
+        } else {
+            renderer.setPixelRatio(2);
+        }
         renderer.shadowMap.enabled = true;
         renderer.shadowMapSoft = true;
         renderer.powerPreference = "high-performance";
@@ -207,7 +212,7 @@
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         }, false);
-        
+
 
         // Sroll controls
         let scrollIntensity = 0;
@@ -223,7 +228,7 @@
                     scale_models(scrollIntensity);
                     camera_path();
                 }
-                
+
                 scrollIntensity *= SCROLL_DAMPING_FACTOR;
                 requestAnimationFrame(applyScrollInertia);
             } else {
@@ -294,7 +299,7 @@
             }
             inertiaLoop();
         });
-        
+
         // Key controls
         let keyInertia = 0;
         let keyInterval;

@@ -37,8 +37,18 @@
 
 <body>
     <script>
-        const INERTIA_FACTOR = 0.005
-        const INERTIA_DECAY = 0.995;
+        
+        const SCROLL_FACTOR = 0.003;
+        const SPEED_CAP = 30;
+        const SCROLL_DAMPING_FACTOR = 0.9;
+        const SCROLL_INERTIA_THRESHOLD = 0.001;
+        const SCROLL_INERTIA_CAP = 0.07
+
+        const TOUCH_INERTIA_DECAY = 0.97;
+        const TOUCH_INERTIA_FACTOR = 0.003
+        TOUCH_INERTIA_CAP = 0.01
+        
+        const KEY_INERTIA_FACTOR = 0.005
         const KEY_INERTIA_DECAY = 0.99;
         const KEY_SPEED_DECAY = 0.1;
         const KEY_SPEED = 6
@@ -197,23 +207,42 @@
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         }, false);
+        
 
-        // Handle scroll to rescale models
+        // Sroll controls
+        let scrollIntensity = 0;
+        let isScrolling = false;
+
+        function applyScrollInertia() {
+            scrollIntensity = Math.min(SCROLL_INERTIA_CAP, Math.max(-SCROLL_INERTIA_CAP, scrollIntensity));
+            if (Math.abs(scrollIntensity) > SCROLL_INERTIA_THRESHOLD) {
+                if (
+                    (models.at(0).scale.x + scrollIntensity * models.at(0).scale.x > LOCK_SALE && scrollIntensity < 0) ||
+                    (models.at(-1).scale.x - scrollIntensity * models.at(0).scale.x < LOCK_SALE && scrollIntensity > 0)
+                ) {
+                    scale_models(scrollIntensity);
+                    camera_path();
+                }
+                
+                scrollIntensity *= SCROLL_DAMPING_FACTOR;
+                requestAnimationFrame(applyScrollInertia);
+            } else {
+                isScrolling = false;
+            }
+        }
+
         window.addEventListener('wheel', (event) => {
-            const deltaY_capped = Math.min(30, Math.max(-30, event.deltaY));
-            console.log(deltaY_capped)
-            const scrollIntensity = deltaY_capped * INERTIA_FACTOR;
+            const deltaY_capped = Math.min(SPEED_CAP, Math.max(-SPEED_CAP, event.deltaY));
+            scrollIntensity += deltaY_capped * SCROLL_FACTOR;
 
-            if (
-                (models.at(0).scale.x + scrollIntensity * models.at(0).scale.x > LOCK_SALE && scrollIntensity < 0) ||
-                (models.at(-1).scale.x - scrollIntensity * models.at(0).scale.x < LOCK_SALE && scrollIntensity > 0)
-            ) {
-                scale_models(scrollIntensity)
-                camera_path()
+            if (!isScrolling) {
+                isScrolling = true;
+                requestAnimationFrame(applyScrollInertia);
             }
         });
 
-        // Handle touch events to rescale models
+
+        // Touch controls
         let touchStartX = 0;
         let touchStartY = 0;
         let inertia = 0;
@@ -229,8 +258,8 @@
             const touchY = event.touches[0].clientY;
             const deltaX = touchX - touchStartX;
             const deltaY = touchY - touchStartY;
-            const deltaY_capped = Math.min(30, Math.max(-30, deltaY));
-            const scrollIntensity = -deltaY_capped * INERTIA_FACTOR;
+            const deltaY_capped = Math.min(SPEED_CAP, Math.max(-SPEED_CAP, deltaY));
+            const scrollIntensity = -deltaY_capped * TOUCH_INERTIA_FACTOR;
 
             if (
                 (models.at(0).scale.x > LOCK_SALE && scrollIntensity < 0) ||
@@ -248,8 +277,8 @@
 
         window.addEventListener('touchend', () => {
             function inertiaLoop() {
-                if (Math.abs(inertia) > 0.01) {
-                    const scrollIntensity = -inertia * INERTIA_FACTOR;
+                if (Math.abs(inertia) > TOUCH_INERTIA_CAP) {
+                    const scrollIntensity = -inertia * TOUCH_INERTIA_FACTOR;
 
                     if (
                         (models.at(0).scale.x > LOCK_SALE && scrollIntensity < 0) ||
@@ -258,20 +287,21 @@
                         scale_models(scrollIntensity)
                         camera_path()
 
-                        inertia *= INERTIA_DECAY;
+                        inertia *= TOUCH_INERTIA_DECAY;
                         requestAnimationFrame(inertiaLoop);
                     }
                 }
             }
             inertiaLoop();
         });
-
+        
+        // Key controls
         let keyInertia = 0;
         let keyInterval;
 
         function handleKeyInertia() {
             if (Math.abs(keyInertia) > KEY_INERTIA_CAP) {
-                const scrollIntensity = keyInertia * INERTIA_FACTOR;
+                const scrollIntensity = keyInertia * KEY_INERTIA_FACTOR;
 
                 if (
                     (models.at(0).scale.x > LOCK_SALE && scrollIntensity < 0) ||

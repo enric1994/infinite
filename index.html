@@ -161,12 +161,11 @@
         let models = [];
 
 
-        function loadModel(modelName, scale_ratio) {
+        function loadModel(modelName, scale) {
             return new Promise((resolve, reject) => {
                 loader.load(modelName, function (gltf) {
                     const model = gltf.scene;
-                    const scale = model.scale.x;
-                    model.scale.set(scale / scale_ratio, scale / scale_ratio, scale / scale_ratio);
+                    model.scale.set(scale , scale, scale);
 
                     // Cast shadows to objects
                     model.castShadow = true;
@@ -199,9 +198,7 @@
             models.push(await loadModel('models/' + model_names[0], 1));
             camera_path()
             for (let i = 1; i < model_names.length; i++) {
-                models.push(await loadModel('models/' + model_names[i], 100 ** (i)));
-                console.log('Load model', model_names[i])
-                // await new Promise(r => setTimeout(r, 500));
+                models.push(await loadModel('models/' + model_names[i], models[0].scale.x/(100 ** (i))));
             }
         }
         loadModels()

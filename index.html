@@ -1,8 +1,5 @@
 <!-- TODO
 3D:
-- add devops
-- add BBC internship ?
-- add zalando
 - add fever
 - contact
 
@@ -75,7 +72,7 @@ JS:
         const MAX_SCALE = 10000;
         const MIN_SCALE = 0.0001;
         const LOCK_SALE = 1;
-        const model_names = ['title.glb', 'city.glb', 'languages.glb', 'uni.glb', 'phd.glb', 'home.glb', 'experience.glb', 'tc.glb', 'devops.glb'];
+        const model_names = ['title.glb', 'city.glb', 'languages.glb', 'uni.glb', 'phd.glb', 'home.glb', 'experience.glb', 'tc.glb', 'devops.glb', 'safari.glb'];
 
         function camera_path() {
             camera.position.x = 15 * Math.sin(0.2 * Math.log2(models[0].scale.x));
@@ -210,7 +207,7 @@ JS:
             });
         }
         async function loadModels() {
-            models.push(await loadModel('models/' + model_names[0], 1));
+            models.push(await loadModel('models/' + model_names[0], 1e16));
             camera_path()
             for (let i = 1; i < model_names.length; i++) {
                 models.push(await loadModel('models/' + model_names[i], models[0].scale.x/(100 ** (i))));

@@ -21,7 +21,6 @@ JS:
     <meta name="author" content="Enric Moreu">
     <meta name="theme-color" content="black">
     <meta property='og:title' content='Enric Moreu | 3D resume' />
-    <!-- <meta property='og:image' content='https://github.com/enric1994/resume/raw/master/preview.png' /> -->
     <meta property='og:description' content='3D resume of Enric Moreu' />
     <meta property='og:url' content='https://resume.enricmor.eu' />
     <link rel="shortcut icon" href="favicon.png">
@@ -41,7 +40,6 @@ JS:
             display: block;
         }
     </style>
-    <!-- <script>history.scrollRestoration = "manual"</script> -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.143.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.143.0/examples/js/loaders/GLTFLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/stats-js@1.0.1/build/stats.min.js"></script>
@@ -49,264 +47,206 @@ JS:
 
 <body>
     <script>
-
+        // Constants
         const SPEED_CAP = 30;
-
         const SCROLL_FACTOR = 0.003;
         const SCROLL_DAMPING_FACTOR = 0.9;
         const SCROLL_INERTIA_THRESHOLD = 0.001;
-        const SCROLL_INERTIA_CAP = 0.1
-
+        const SCROLL_INERTIA_CAP = 0.1;
         const TOUCH_INERTIA_DECAY = 0.97;
-        const TOUCH_INERTIA_FACTOR = 0.003
-        const TOUCH_INERTIA_CAP = 0.01
-
-        const KEY_INERTIA_FACTOR = 0.005
+        const TOUCH_INERTIA_FACTOR = 0.003;
+        const TOUCH_INERTIA_CAP = 0.01;
+        const KEY_INERTIA_FACTOR = 0.005;
         const KEY_INERTIA_DECAY = 0.99;
         const KEY_SPEED_DECAY = 0.1;
-        const KEY_SPEED = 6
-        const KEY_INERTIA_CAP = 0.001
-        const KEY_INTERVAL = 10
-
+        const KEY_SPEED = 6;
+        const KEY_INERTIA_CAP = 0.001;
+        const KEY_INTERVAL = 10;
         const FOV = 45;
         const MAX_SCALE = 10000;
         const MIN_SCALE = 0.0001;
-        const LOCK_SALE = 1;
-        const model_names = ['title.glb', 'city.glb', 'languages.glb', 'uni.glb', 'phd.glb', 'home.glb', 'experience.glb', 'tc.glb', 'devops.glb', 'safari.glb'];
+        const LOCK_SCALE = 1;
+        const modelNames = ['title.glb', 'city.glb', 'languages.glb', 'uni.glb', 'phd.glb', 'home.glb', 'experience.glb', 'tc.glb', 'devops.glb', 'safari.glb'];
 
-        function camera_path() {
-            camera.position.x = 15 * Math.sin(0.2 * Math.log2(models[0].scale.x));
-            camera.position.y = 1 + 1 * Math.sin(0.3 * Math.log2(models[0].scale.x));
-            camera.position.z = -5 + 15 * Math.cos(0.1 * Math.log2(models[0].scale.x));
-            camera.lookAt(0, 0, 0);
-        }
+        // Variables
+        let models = [];
+        let scrollIntensity = 0;
+        let isScrolling = false;
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let inertia = 0;
+        let keyInertia = 0;
+        let keyInterval;
 
-        function scale_models(scrollIntensity) {
-            for (let i = 0; i < models.length; i++) {
-                current_scale = models[i].scale.x;
-                new_scale = current_scale + scrollIntensity * current_scale;
-                models[i].scale.set(new_scale, new_scale, new_scale);
-                if (models[i].scale.x > MAX_SCALE || models[i].scale.x < MIN_SCALE) {
-                    models[i].visible = false;
-                } else {
-                    models[i].visible = true;
-                }
-            }
-        }
-
-        // Setup
+        // Initialize Three.js scene
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(FOV, window.innerWidth / window.innerHeight, 0.1, 1000000000);
         const clock = new THREE.Clock();
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, logarithmicDepthBuffer: true });
         const loader = new THREE.GLTFLoader();
 
-        if (window.devicePixelRatio < 1.5) {
-            renderer.setPixelRatio(window.devicePixelRatio);
-        } else {
-            renderer.setPixelRatio(2);
-        }
+        // Renderer settings
+        renderer.setPixelRatio(window.devicePixelRatio < 1.5 ? window.devicePixelRatio : 2);
         renderer.shadowMap.enabled = true;
-        renderer.shadowMapSoft = true;
         renderer.powerPreference = "high-performance";
-        renderer.shadowMap.enabled = true
         renderer.outputEncoding = THREE.sRGBEncoding;
         renderer.physicallyCorrectLights = true;
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
         // Stats
-        const stats = new Stats()
-        stats.showPanel(0) // 0: fps, 1: ms, 2: mb, 3+: custom
-        document.body.appendChild(stats.dom)
+        const stats = new Stats();
+        stats.showPanel(0);
+        document.body.appendChild(stats.dom);
 
-        // Lighting
-        const ambientLight = new THREE.AmbientLight('white', .75);
-        scene.add(ambientLight)
+        // Lighting setup
+        const lights = [
+            new THREE.AmbientLight('white', 0.75),
+            new THREE.HemisphereLight('white', 'orange', 1),
+            new THREE.DirectionalLight('white', 1),
+            new THREE.DirectionalLight('white', 1),
+            new THREE.DirectionalLight('white', 1),
+            new THREE.DirectionalLight('white', 1),
+            new THREE.DirectionalLight('white', 0.7),
+            new THREE.DirectionalLight(0xffffff, 1.0)
+        ];
 
-        const hemiLight = new THREE.HemisphereLight('white', 'orange', 1);
-        scene.add(hemiLight)
+        lights[2].position.set(10, 10, 10);
+        lights[3].position.set(-10, 10, 10);
+        lights[4].position.set(-10, 10, -10);
+        lights[5].position.set(10, 10, -10);
+        lights[6].position.set(-10, 10, -5);
+        lights[7].position.set(0.1, 1.5, 0.1);
 
-        // Directional light 1
-        const dir1 = new THREE.DirectionalLight('white', 1);
-        dir1.position.set(10, 10, 10);
-        scene.add(dir1)
+        lights[7].castShadow = true;
+        lights[7].shadow.mapSize.width = 5000;
+        lights[7].shadow.mapSize.height = 5000;
+        lights[7].shadow.camera.near = 1;
+        lights[7].shadow.camera.far = 50;
+        lights[7].shadow.camera.top = 50;
+        lights[7].shadow.camera.bottom = -50;
+        lights[7].shadow.camera.left = -50;
+        lights[7].shadow.camera.right = 50;
+        lights.forEach(light => scene.add(light));
 
-        // Directional light 2 
-        const dir2 = new THREE.DirectionalLight('white', 1);
-        dir2.position.set(-10, 10, 10);
-        scene.add(dir2)
-
-        // Directional light 3
-        const dir3 = new THREE.DirectionalLight('white', 1);
-        dir3.position.set(-10, 10, -10);
-        scene.add(dir3)
-
-        // Directional light 4
-        const dir4 = new THREE.DirectionalLight('white', 1);
-        dir4.position.set(10, 10, -10);
-        scene.add(dir4)
-
-        // Directional light 5
-        const dir5 = new THREE.DirectionalLight('white', 0.7);
-        dir2.position.set(-10, 10, -5);
-        scene.add(dir5)
-
-        const shadowLight = new THREE.DirectionalLight(0xffffff, 1.0);
-        shadowLight.position.set(0.1, 1.5, 0.1);
-        shadowLight.castShadow = true;
-        scene.add(shadowLight);
-        shadowLight.shadow.mapSize.width = 5000;
-        shadowLight.shadow.mapSize.height = 5000;
-
-        shadowLight.shadow.camera.near = 1;
-        shadowLight.shadow.camera.far = 50;
-        shadowLight.shadow.camera.top = 50;
-        shadowLight.shadow.camera.bottom = -50;
-        shadowLight.shadow.camera.left = -50;
-        shadowLight.shadow.camera.right = 50;
-        shadowLight.shadow.camera.updateProjectionMatrix();
-        shadowLight.castShadow = true;
-        shadowLight.shadow.bias = -0.001;
-
-        // Load models
-        let models = [];
-
-
-        function loadModel(modelName, scale) {
+        // Function to load models
+        async function loadModel(modelName, scale) {
             return new Promise((resolve, reject) => {
-                loader.load(modelName, function (gltf) {
+                loader.load(modelName, (gltf) => {
                     const model = gltf.scene;
-                    model.scale.set(scale , scale, scale);
-
-                    // Cast shadows to objects
+                    model.scale.set(scale, scale, scale);
                     model.castShadow = true;
-                    model.traverse(function (node) {
+                    model.traverse(node => {
                         if (node instanceof THREE.Mesh) {
                             node.castShadow = true;
                             node.receiveShadow = true;
-                            node.flatShading = true;
-                            node.blending = THREE.NoBlending;
-                            const newMaterial = new THREE.MeshPhongMaterial({ color: node.material.color });
-                            node.material = newMaterial;
-
+                            node.material = new THREE.MeshPhongMaterial({ color: node.material.color });
                         }
                     });
                     scene.add(model);
-
-                    // Enable animations
-                    if (gltf.animations && gltf.animations.length) {
+                    if (gltf.animations.length) {
                         const mixer = new THREE.AnimationMixer(model);
-                        gltf.animations.forEach((clip) => {
-                            mixer.clipAction(clip).play();
-                        });
+                        gltf.animations.forEach(clip => mixer.clipAction(clip).play());
                         model.mixer = mixer;
                     }
                     resolve(model);
                 }, undefined, reject);
             });
         }
+
+        // Load all models
         async function loadModels() {
-            models.push(await loadModel('models/' + model_names[0], 1));
-            camera_path()
-            for (let i = 1; i < model_names.length; i++) {
-                models.push(await loadModel('models/' + model_names[i], models[0].scale.x/(100 ** (i))));
+            models.push(await loadModel('models/' + modelNames[0], 1));
+            updateCameraPath();
+            for (let i = 1; i < modelNames.length; i++) {
+                models.push(await loadModel('models/' + modelNames[i], models[0].scale.x / (100 ** i)));
             }
         }
-        loadModels()
+        loadModels();
 
-        // Handle window resize
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        }, false);
+        // Function to update camera path
+        function updateCameraPath() {
+            camera.position.set(
+                15 * Math.sin(0.2 * Math.log2(models[0].scale.x)),
+                1 + 1 * Math.sin(0.3 * Math.log2(models[0].scale.x)),
+                -5 + 15 * Math.cos(0.1 * Math.log2(models[0].scale.x))
+            );
+            camera.lookAt(0, 0, 0);
+        }
 
+        // Function to scale models
+        function scaleModels(scrollIntensity) {
+            models.forEach(model => {
+                const currentScale = model.scale.x;
+                const newScale = currentScale + scrollIntensity * currentScale;
+                model.scale.set(newScale, newScale, newScale);
+                model.visible = (model.scale.x <= MAX_SCALE && model.scale.x >= MIN_SCALE);
+            });
+        }
 
-        // Sroll controls
-        let scrollIntensity = 0;
-        let isScrolling = false;
-
+        // Scroll controls
         function applyScrollInertia() {
             scrollIntensity = Math.min(SCROLL_INERTIA_CAP, Math.max(-SCROLL_INERTIA_CAP, scrollIntensity));
             if (Math.abs(scrollIntensity) > SCROLL_INERTIA_THRESHOLD) {
-                if (
-                    (models.at(0).scale.x + scrollIntensity * models.at(0).scale.x > LOCK_SALE && scrollIntensity < 0) ||
-                    (models.at(-1).scale.x - scrollIntensity * models.at(0).scale.x < LOCK_SALE && scrollIntensity > 0)
-                ) {
-                    scale_models(scrollIntensity);
-                    camera_path();
-                }
+                const lockSaleCondition = (models[0].scale.x + scrollIntensity * models[0].scale.x > LOCK_SCALE && scrollIntensity < 0) ||
+                    (models[models.length - 1].scale.x - scrollIntensity * models[0].scale.x < LOCK_SCALE && scrollIntensity > 0);
 
+                if (lockSaleCondition) {
+                    scaleModels(scrollIntensity);
+                    updateCameraPath();
+                }
                 scrollIntensity *= SCROLL_DAMPING_FACTOR;
                 requestAnimationFrame(applyScrollInertia);
             } else {
                 isScrolling = false;
             }
         }
+
         let scrollDirection = 0;
-        window.addEventListener('wheel', (event) => {
-            if(event.deltaY > 0 && scrollDirection == 0){
-                scrollDirection = 1
-            } else if (event.deltaY < 0 && scrollDirection == 0){
-                scrollDirection = -1
-            }
-
-            const deltaY_capped = Math.min(SPEED_CAP, Math.max(-SPEED_CAP, event.deltaY*scrollDirection));
-            scrollIntensity += deltaY_capped * SCROLL_FACTOR;
-
+        window.addEventListener('wheel', event => {
+            if (scrollDirection === 0) scrollDirection = event.deltaY > 0 ? 1 : -1;
+            const deltaYcapped = Math.min(SPEED_CAP, Math.max(-SPEED_CAP, event.deltaY * scrollDirection));
+            scrollIntensity += deltaYcapped * SCROLL_FACTOR;
             if (!isScrolling) {
                 isScrolling = true;
                 requestAnimationFrame(applyScrollInertia);
             }
         });
 
-
         // Touch controls
-        let touchStartX = 0;
-        let touchStartY = 0;
-        let inertia = 0;
-
-        window.addEventListener('touchstart', (event) => {
+        window.addEventListener('touchstart', event => {
             touchStartX = event.touches[0].clientX;
             touchStartY = event.touches[0].clientY;
             inertia = 0;
         });
 
-        window.addEventListener('touchmove', (event) => {
+        window.addEventListener('touchmove', event => {
             const touchX = event.touches[0].clientX;
             const touchY = event.touches[0].clientY;
-            const deltaX = touchX - touchStartX;
-            const deltaY = touchY - touchStartY;
-            const deltaY_capped = Math.min(SPEED_CAP, Math.max(-SPEED_CAP, deltaY));
-            const scrollIntensity = -deltaY_capped * TOUCH_INERTIA_FACTOR;
+            const deltaYcapped = Math.min(SPEED_CAP, Math.max(-SPEED_CAP, touchY - touchStartY));
+            const scrollIntensity = -deltaYcapped * TOUCH_INERTIA_FACTOR;
+            const lockSaleCondition = (models[0].scale.x > LOCK_SCALE && scrollIntensity < 0) ||
+                (models[models.length - 1].scale.x < LOCK_SCALE && scrollIntensity > 0);
 
-            if (
-                (models.at(0).scale.x > LOCK_SALE && scrollIntensity < 0) ||
-                (models.at(-1).scale.x < LOCK_SALE && scrollIntensity > 0)
-            ) {
-                scale_models(scrollIntensity)
-                camera_path()
-
-                inertia = deltaY_capped;
+            if (lockSaleCondition) {
+                scaleModels(scrollIntensity);
+                updateCameraPath();
+                inertia = deltaYcapped;
                 touchStartX = touchX;
                 touchStartY = touchY;
             }
-
         });
 
         window.addEventListener('touchend', () => {
             function inertiaLoop() {
                 if (Math.abs(inertia) > TOUCH_INERTIA_CAP) {
                     const scrollIntensity = -inertia * TOUCH_INERTIA_FACTOR;
+                    const lockSaleCondition = (models[0].scale.x > LOCK_SCALE && scrollIntensity < 0) ||
+                        (models[models.length - 1].scale.x < LOCK_SCALE && scrollIntensity > 0);
 
-                    if (
-                        (models.at(0).scale.x > LOCK_SALE && scrollIntensity < 0) ||
-                        (models.at(-1).scale.x < LOCK_SALE && scrollIntensity > 0)
-                    ) {
-                        scale_models(scrollIntensity)
-                        camera_path()
-
+                    if (lockSaleCondition) {
+                        scaleModels(scrollIntensity);
+                        updateCameraPath();
                         inertia *= TOUCH_INERTIA_DECAY;
                         requestAnimationFrame(inertiaLoop);
                     }
@@ -316,19 +256,15 @@ JS:
         });
 
         // Key controls
-        let keyInertia = 0;
-        let keyInterval;
-
         function handleKeyInertia() {
             if (Math.abs(keyInertia) > KEY_INERTIA_CAP) {
                 const scrollIntensity = keyInertia * KEY_INERTIA_FACTOR;
+                const lockSaleCondition = (models[0].scale.x > LOCK_SCALE && scrollIntensity < 0) ||
+                    (models[models.length - 1].scale.x < LOCK_SCALE && scrollIntensity > 0);
 
-                if (
-                    (models.at(0).scale.x > LOCK_SALE && scrollIntensity < 0) ||
-                    (models.at(-1).scale.x < LOCK_SALE && scrollIntensity > 0)
-                ) {
-                    scale_models(scrollIntensity);
-                    camera_path();
+                if (lockSaleCondition) {
+                    scaleModels(scrollIntensity);
+                    updateCameraPath();
                     keyInertia *= KEY_INERTIA_DECAY;
                 } else {
                     clearInterval(keyInterval);
@@ -338,37 +274,37 @@ JS:
             }
         }
 
-        window.addEventListener('keydown', (event) => {
+        window.addEventListener('keydown', event => {
             if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
                 clearInterval(keyInterval);
-                keyInertia = (event.key === 'ArrowUp' ? -KEY_SPEED : KEY_SPEED);
+                keyInertia = event.key === 'ArrowUp' ? -KEY_SPEED : KEY_SPEED;
                 keyInterval = setInterval(handleKeyInertia, KEY_INTERVAL);
             }
         });
 
-        window.addEventListener('keyup', (event) => {
+        window.addEventListener('keyup', event => {
             if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
                 keyInertia *= KEY_SPEED_DECAY;
             }
         });
 
-
-        // Animation loop 
+        // Animation loop
         function animate() {
             stats.begin();
-
             requestAnimationFrame(animate);
             const delta = clock.getDelta();
-            for (let model of models) {
-                if (model.mixer) {
-                    model.mixer.update(delta);
-                }
-            }
+            models.forEach(model => model.mixer && model.mixer.update(delta));
             renderer.render(scene, camera);
-
             stats.end();
         }
         animate();
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
     </script>
 </body>
 

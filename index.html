@@ -4,7 +4,6 @@
 - contact
 
 JS:
-- throttle when going back to scale 1
 - link to linkedin at the end
 - re-map site to enricmor.eu (and hi.enricmor.eu)
 - restart infinite?
@@ -77,6 +76,7 @@ JS:
         let inertia = 0;
         let keyInertia = 0;
         let keyInterval;
+        let scrollDirection = 0;
 
         // Initialize Three.js scene
         const scene = new THREE.Scene();
@@ -188,8 +188,8 @@ JS:
         function applyScrollInertia() {
             scrollIntensity = Math.min(SCROLL_INERTIA_CAP, Math.max(-SCROLL_INERTIA_CAP, scrollIntensity));
             if (Math.abs(scrollIntensity) > SCROLL_INERTIA_THRESHOLD) {
-                const lockSaleCondition = (models[0].scale.x + scrollIntensity * models[0].scale.x > LOCK_SCALE && scrollIntensity < 0) ||
-                    (models[models.length - 1].scale.x - scrollIntensity * models[0].scale.x < LOCK_SCALE && scrollIntensity > 0);
+                const lockSaleCondition = (models[0].scale.x > LOCK_SCALE && scrollIntensity < 0) ||
+                    (models[models.length - 1].scale.x < LOCK_SCALE && scrollIntensity > 0);
 
                 if (lockSaleCondition) {
                     scaleModels(scrollIntensity);
@@ -202,7 +202,6 @@ JS:
             }
         }
 
-        let scrollDirection = 0;
         window.addEventListener('wheel', event => {
             if (scrollDirection === 0) scrollDirection = event.deltaY > 0 ? 1 : -1;
             const deltaYcapped = Math.min(SPEED_CAP, Math.max(-SPEED_CAP, event.deltaY * scrollDirection));

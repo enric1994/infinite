@@ -207,7 +207,7 @@ JS:
             });
         }
         async function loadModels() {
-            models.push(await loadModel('models/' + model_names[0], 1e16));
+            models.push(await loadModel('models/' + model_names[0], 1));
             camera_path()
             for (let i = 1; i < model_names.length; i++) {
                 models.push(await loadModel('models/' + model_names[i], models[0].scale.x/(100 ** (i))));

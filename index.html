@@ -59,10 +59,11 @@ JS:
         const KEY_INERTIA_CAP = 0.001;
         const KEY_INTERVAL = 10;
         const FOV = 45;
-        const MAX_SCALE = 10000;
+        const MAX_SCALE = 100000;
         const MIN_SCALE = 0.001;
         const LOCK_SCALE = 1;
-        const modelNames = ['title.glb', 'city.glb', 'languages.glb', 'uni.glb', 'phd.glb', 'home.glb', 'experience.glb', 'tc.glb', 'devops.glb', 'safari.glb', 'candle.glb', 'contact.glb', 'empty.glb'];
+        const LOCK_SCALE_END = 630;
+        const modelNames = ['title.glb', 'city.glb', 'languages.glb', 'uni.glb', 'phd.glb', 'home.glb', 'experience.glb', 'tc.glb', 'devops.glb', 'safari.glb', 'candle.glb'];
 
         // Variables
         let models = [];
@@ -74,8 +75,6 @@ JS:
         let keyInertia = 0;
         let keyInterval;
         let scrollDirection = 0;
-
-        let t = 1
 
         // Initialize Three.js scene
         const scene = new THREE.Scene();
@@ -158,7 +157,7 @@ JS:
             models.push(await loadModel('models/' + modelNames[0], 1));
             updateCameraPath();
             for (let i = 1; i < modelNames.length; i++) {
-                models.push(await loadModel('models/' + modelNames[i], t / (100 ** i)));
+                models.push(await loadModel('models/' + modelNames[i], models[0].scale.x / (100 ** i)));
             }
         }
         loadModels();
@@ -166,45 +165,40 @@ JS:
         // Function to update camera path
         function updateCameraPath() {
             camera.position.set(
-                15 * Math.sin(0.2 * Math.log2(t)),
-                1 + 1 * Math.sin(0.3 * Math.log2(t)),
-                -5 + 15 * Math.cos(0.1 * Math.log2(t))
+                15 * Math.sin(0.2 * Math.log2(models[0].scale.x)),
+                1 + 1 * Math.sin(0.3 * Math.log2(models[0].scale.x)),
+                -5 + 15 * Math.cos(0.1 * Math.log2(models[0].scale.x))
             );
             camera.lookAt(0, 0, 0);
         }
 
-        // let smallest_model = modelNames.length - 1
         // Function to scale models
-        let pushed_models = []
         async function scaleModels(scrollIntensity) {
 
-            // Works!!!
-            t = t + scrollIntensity * t
+
+
             for (let i = 0; i < models.length; i++) {
+                // Hide models when not in sight
                 if (models[i].scale.x >= MAX_SCALE || models[i].scale.x < MIN_SCALE) {
                     models[i].visible = false
                 } else {
                     models[i].visible = true
                 }
 
-                const currentScale = models[i].scale.x;
-                let newScale = currentScale + scrollIntensity * currentScale;
+                // Scale models
+                let newScale = models[i].scale.x + scrollIntensity * models[i].scale.x;
                 models[i].scale.set(newScale, newScale, newScale);
-                if (newScale > MAX_SCALE && !(i in pushed_models)) {
-                    newScale = models[models.length - 1].scale.x / 100
-                    models.push(await loadModel('models/' + modelNames[i % (modelNames.length - 1)], newScale));
-                    pushed_models.push(i)
-                    console.log('push', i)
-                }
-                if (i % (modelNames.length) == 0 && models[i].scale.x > 0.01 && models[i].scale.x < 1 && t > 10) {
-                    t = 0.01
-                    console.log('reset')
-                    models = models.slice(modelNames.length);
-
-                }
-
 
             }
+
+            // Reset loop at the end
+            if (models[models.length - 1].scale.x > LOCK_SCALE_END) {
+                for (let i = 0; i < models.length; i++) {
+                    newScale = 0.1 / 100 ** i
+                    models[i].scale.set(newScale, newScale, newScale);
+                }
+            }
+
         }
 
         // Scroll controls
@@ -212,7 +206,7 @@ JS:
             scrollIntensity = Math.min(SCROLL_INERTIA_CAP, Math.max(-SCROLL_INERTIA_CAP, scrollIntensity));
             if (Math.abs(scrollIntensity) > SCROLL_INERTIA_THRESHOLD) {
                 const lockSaleCondition = (models[0].scale.x > LOCK_SCALE && scrollIntensity < 0) ||
-                    (models[models.length - 1].scale.x < LOCK_SCALE && scrollIntensity > 0);
+                    (models[models.length - 1].scale.x < LOCK_SCALE_END && scrollIntensity > 0);
 
                 if (lockSaleCondition) {
                     scaleModels(scrollIntensity);
@@ -247,8 +241,8 @@ JS:
             const touchY = event.touches[0].clientY;
             const deltaYcapped = Math.min(SPEED_CAP, Math.max(-SPEED_CAP, touchY - touchStartY));
             const scrollIntensity = -deltaYcapped * TOUCH_INERTIA_FACTOR;
-            const lockSaleCondition = (t > LOCK_SCALE && scrollIntensity < 0) ||
-                (models[models.length - 1].scale.x < LOCK_SCALE && scrollIntensity > 0);
+            const lockSaleCondition = (models[0].scale.x > LOCK_SCALE && scrollIntensity < 0) ||
+                (models[models.length - 1].scale.x < LOCK_SCALE_END && scrollIntensity > 0);
 
             if (lockSaleCondition) {
                 scaleModels(scrollIntensity);
@@ -263,8 +257,8 @@ JS:
             function inertiaLoop() {
                 if (Math.abs(inertia) > TOUCH_INERTIA_CAP) {
                     const scrollIntensity = -inertia * TOUCH_INERTIA_FACTOR;
-                    const lockSaleCondition = (t > LOCK_SCALE && scrollIntensity < 0) ||
-                        (models[models.length - 1].scale.x < LOCK_SCALE && scrollIntensity > 0);
+                    const lockSaleCondition = (models[0].scale.x > LOCK_SCALE && scrollIntensity < 0) ||
+                        (models[models.length - 1].scale.x < LOCK_SCALE_END && scrollIntensity > 0);
 
                     if (lockSaleCondition) {
                         scaleModels(scrollIntensity);
@@ -281,8 +275,8 @@ JS:
         function handleKeyInertia() {
             if (Math.abs(keyInertia) > KEY_INERTIA_CAP) {
                 const scrollIntensity = keyInertia * KEY_INERTIA_FACTOR;
-                const lockSaleCondition = (t > LOCK_SCALE && scrollIntensity < 0) ||
-                    (models[models.length - 1].scale.x < LOCK_SCALE && scrollIntensity > 0);
+                const lockSaleCondition = (models[0].scale.x > LOCK_SCALE && scrollIntensity < 0) ||
+                    (models[models.length - 1].scale.x < LOCK_SCALE_END && scrollIntensity > 0);
 
                 if (lockSaleCondition) {
                     scaleModels(scrollIntensity);

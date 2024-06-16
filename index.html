@@ -1,11 +1,3 @@
-<!-- TODO
-JS:
-- link to linkedin at the end
-- re-map site to enricmor.eu (and hi.enricmor.eu)
-- restart infinite?
-- general performance and UX tests
-- hide non-visible models and pause animations
--->
 <!DOCTYPE html>
 <html>
 
@@ -30,10 +22,31 @@ JS:
         body {
             margin: 0;
             background: linear-gradient(to bottom, #0b9ed9, #07c7f2);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
         }
 
         canvas {
             display: block;
+        }
+
+        #footer-text {
+            width: 100%;
+            text-align: center;
+            position: absolute;
+            bottom: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px 0;
+            font-size: 2em;
+            display: none;
+        }
+
+        a {
+            font-weight: bold;
+            color: black;
+            font-family: 'Courier New', Courier, monospace;
+            text-decoration: none;
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/three@0.143.0/build/three.min.js"></script>
@@ -197,6 +210,7 @@ JS:
                     newScale = 0.1 / 100 ** i
                     models[i].scale.set(newScale, newScale, newScale);
                 }
+                document.getElementById('footer-text').style.display = 'block';
             }
 
         }
@@ -323,5 +337,10 @@ JS:
         });
     </script>
 </body>
+
+<div id="footer-text">
+    <a target="_blank" href="https://www.linkedin.com/in/enricmf/">LinkedIn</a> - <a target="_blank"
+        href="https://www.github.com/enric1994/">GitHub</a> - <a target="_blank" href="https://enricmor.eu/">Website</a>
+</div>
 
 </html>

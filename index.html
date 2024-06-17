@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="description" content="3D resume of Enric Moreu">
     <meta name="keywords" content="3D, resume, Enric Moreu">
     <meta name="author" content="Enric Moreu">
@@ -71,10 +71,12 @@
         const KEY_INERTIA_CAP = 0.001;
         const KEY_INTERVAL = 10;
         const FOV = 45;
-        const MAX_SCALE = 100000;
+        const MAX_SCALE = 50000;
         const MIN_SCALE = 0.001;
         const LOCK_SCALE = 1;
         const LOCK_SCALE_END = 630;
+        const MODEL_SCALE = 100
+        const MODEL_SCALE_RESTART = 0.5
         const modelNames = ['title.glb', 'city.glb', 'languages.glb', 'uni.glb', 'phd.glb', 'home.glb', 'experience.glb', 'tc.glb', 'devops.glb', 'safari.glb', 'candle.glb'];
 
         // Variables
@@ -96,7 +98,7 @@
         const loader = new THREE.GLTFLoader();
 
         // Renderer settings
-        renderer.setPixelRatio(window.devicePixelRatio < 1 ? window.devicePixelRatio : 1.5);
+        renderer.setPixelRatio(window.devicePixelRatio < 1.5 ? window.devicePixelRatio : 2);
         renderer.shadowMap.enabled = true;
         renderer.powerPreference = "high-performance";
         renderer.outputEncoding = THREE.sRGBEncoding;
@@ -169,7 +171,7 @@
             models.push(await loadModel('models/' + modelNames[0], 1));
             updateCameraPath();
             for (let i = 1; i < modelNames.length; i++) {
-                models.push(await loadModel('models/' + modelNames[i], models[0].scale.x / (100 ** i)));
+                models.push(await loadModel('models/' + modelNames[i], models[0].scale.x / (MODEL_SCALE ** i)));
             }
         }
         loadModels();
@@ -206,7 +208,7 @@
             // Reset loop at the end
             if (models[models.length - 1].scale.x > LOCK_SCALE_END) {
                 for (let i = 0; i < models.length; i++) {
-                    newScale = 0.1 / 100 ** i
+                    newScale = MODEL_SCALE_RESTART / MODEL_SCALE ** i
                     models[i].scale.set(newScale, newScale, newScale);
                 }
                 document.getElementById('footer-text').style.display = 'block';
@@ -322,7 +324,11 @@
             stats.begin();
             requestAnimationFrame(animate);
             const delta = clock.getDelta();
-            models.forEach(model => model.mixer && model.mixer.update(delta));
+            for (let i = 0; i < models.length; i++) {
+                if (models[i].mixer && models[i].visible) {
+                    models[i].mixer.update(delta);
+                }
+            }
             renderer.render(scene, camera);
             stats.end();
         }
@@ -338,8 +344,8 @@
 </body>
 
 <div id="footer-text">
-    <a target="_blank" href="https://www.linkedin.com/in/enricmf/">LinkedIn</a> - <a target="_blank"
-        href="https://www.github.com/enric1994/">GitHub</a> - <a target="_blank" href="https://enricmor.eu/">Website</a>
+    <a target="_blank" href="https://www.linkedin.com/in/enricmf/">LinkedIn</a> | <a target="_blank"
+        href="https://www.github.com/enric1994/">GitHub</a> | <a target="_blank" href="https://enricmor.eu/">Website</a>
 </div>
 
 </html>

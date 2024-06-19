@@ -24,6 +24,20 @@
     <meta property='og:description' content='3D resume of Enric Moreu' />
     <meta property='og:url' content='https://resume.enricmor.eu' />
     <link rel="shortcut icon" href="favicon.png">
+
+    <script async src="https://cdn.jsdelivr.net/npm/es-module-shims@1.8.3/dist/es-module-shims.min.js"></script>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.min.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
+        }
+      }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/stats-js@1.0.1/build/stats.min.js"></script>
+
     <title>Enric Moreu | 3D resume</title>
     <style>
         html {
@@ -60,14 +74,14 @@
             text-decoration: none;
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.143.0/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.143.0/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.143.0/examples/js/loaders/DRACOLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/stats-js@1.0.1/build/stats.min.js"></script>
 </head>
 
 <body>
-    <script>
+    <script type="module">
+        import * as THREE from "three";
+        import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+        import { DRACOLoader } from "three/addons/loaders/DRACOLoader.min.js";
+
         // Constants
         const SPEED_CAP = 30;
         const SCROLL_FACTOR = 0.003;
@@ -92,15 +106,15 @@
         const MODEL_SCALE_RESTART = 0.5
         const modelNames = [
             'title.glb',
-            'city.glb', 
-            'languages.glb', 
-            'uni.glb', 
-            'phd.glb', 
-            'home.glb', 
-            'experience.glb', 
-            'tc.glb', 
-            'devops.glb', 
-            'safari.glb', 
+            'city.glb',
+            'languages.glb',
+            'uni.glb',
+            'phd.glb',
+            'home.glb',
+            'experience.glb',
+            'tc.glb',
+            'devops.glb',
+            'safari.glb',
             'candle.glb'
         ];
 
@@ -120,17 +134,17 @@
         const camera = new THREE.PerspectiveCamera(FOV, window.innerWidth / window.innerHeight, 0.1, 1000000000);
         const clock = new THREE.Clock();
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, logarithmicDepthBuffer: true });
-        const loader = new THREE.GLTFLoader();
-        const dracoLoader = new THREE.DRACOLoader()
-        dracoLoader.setDecoderPath('./compressed_models/')
+        const loader = new GLTFLoader();
+        const dracoLoader = new DRACOLoader()
+        dracoLoader.setDecoderPath("https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/libs/draco/")
+        dracoLoader.setDecoderConfig({ type: 'js' });
+        dracoLoader.preload();
         loader.setDRACOLoader(dracoLoader);
 
         // Renderer settings
         renderer.setPixelRatio(window.devicePixelRatio < 1.5 ? window.devicePixelRatio : 2);
         renderer.shadowMap.enabled = true;
         renderer.powerPreference = "high-performance";
-        renderer.outputEncoding = THREE.sRGBEncoding;
-        renderer.physicallyCorrectLights = true;
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
@@ -217,6 +231,8 @@
         // Function to scale models
         async function scaleModels(scrollIntensity) {
 
+            let newScale;
+
             for (let i = 0; i < models.length; i++) {
                 // Hide models when not in sight
                 if (models[i].scale.x >= MAX_SCALE || models[i].scale.x < MIN_SCALE) {
@@ -226,7 +242,7 @@
                 }
 
                 // Scale models
-                let newScale = models[i].scale.x + scrollIntensity * models[i].scale.x;
+                newScale = models[i].scale.x + scrollIntensity * models[i].scale.x;
                 models[i].scale.set(newScale, newScale, newScale);
 
             }
